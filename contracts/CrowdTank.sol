@@ -1,14 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface ICommissionStore {
-    function totalCommissionReceived() external view returns (uint);
-    function commissionWithdrawn() external view returns (uint);
-    function admin() external view returns (address);
-
-    function updateCommissionAmount(uint _amount) external;
-    function withdrawComission(uint _amount) external payable;
-}
+import "./InterfaceCommissionStore.sol";
 
 contract CrowdTank {
     struct Project {
@@ -38,7 +31,7 @@ contract CrowdTank {
 
     //Hard task 1(a)
     address public admin;
-    constructor(address _commissionStore) {
+    constructor(address payable _commissionStore) {
         admin = msg.sender;
         commissionStore = ICommissionStore(_commissionStore);
     }
@@ -184,8 +177,8 @@ contract CrowdTank {
 
         totalFudingRaised += amountToFund; //Easy Task 5
 
-        payable(address(commissionStore)).transfer(commissionAmount);
-        commissionStore.updateCommissionAmount(commissionAmount);
+        (bool success, ) = address(commissionStore).call{value: commissionAmount}(abi.encodeWithSignature("receiveCommission()"));
+        require(success, "Failed to send ether to CommissionStore");
 
         if (refundAmount > 0) {
             payable(msg.sender).transfer(refundAmount);

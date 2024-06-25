@@ -3,23 +3,19 @@ pragma solidity ^0.8.0;
 
 contract CommissionStore {
     uint public totalCommissionReceived;
-    uint public commissionWithdrawn;
-    address public admin;
+    address payable public admin;
     constructor() {
-        admin = msg.sender;
+        admin = payable(msg.sender);
+    }
+    function receiveCommission() external payable {
+        totalCommissionReceived += msg.value;
     }
 
-    function updateCommissionAmount(uint _amount) external {
-        totalCommissionReceived += _amount;
-    }
-    function withdrawCommission(address _admin) external payable {
+    function withdrawCommission() external payable {
         require(
-            admin == _admin,
+            admin == msg.sender,
             "You are not system admin to withdraw commission"
         );
-        uint commissionToWithdraw = totalCommissionReceived -
-            commissionWithdrawn;
-        payable(_admin).transfer(commissionToWithdraw);
-        commissionWithdrawn += commissionToWithdraw;
+        payable(admin).transfer(address(this).balance);
     }
 }
